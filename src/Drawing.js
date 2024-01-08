@@ -1,6 +1,6 @@
 import React from 'react';
 import {Points, Canvas, Text, useFont} from '@shopify/react-native-skia';
-import {useWindowDimensions, useAnimatedValue} from 'react-native';
+import {useWindowDimensions} from 'react-native';
 
 export const PoseDrawFrame = ({connections, style, angle}) => {
   const {width, height} = useWindowDimensions();
@@ -10,12 +10,18 @@ export const PoseDrawFrame = ({connections, style, angle}) => {
   const x = width - padding; // Position the text near the right edge
   const y = height - padding; // Position the text near the bottom edge
   const font = useFont(require('./assets/fonts/Poppins-Medium.ttf'), 32);
-  const {hipAngle} = angle;
+  const {hipAngle, kneeAngle} = angle;
 
   const getHipAngle = () => {
     if (!hipAngle) return '';
 
-    return (hipAngle - 90).toFixed(2);
+    return `${(hipAngle - 90).toFixed(2)}°`;
+  };
+
+  const getKneeAngle = () => {
+    if (!kneeAngle) return '';
+
+    return `${(kneeAngle + 90).toFixed(2)}°`;
   };
 
   return (
@@ -39,6 +45,14 @@ export const PoseDrawFrame = ({connections, style, angle}) => {
         x={0}
         y={42}
         text={getHipAngle()}
+        fontSize={40}
+        color="black"
+        font={font}
+      />
+      <Text
+        x={0}
+        y={82}
+        text={getKneeAngle()}
         fontSize={40}
         color="black"
         font={font}

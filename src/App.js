@@ -45,13 +45,32 @@ const App = () => {
   const connections = useSharedValue([]);
   const [angle, setAngle] = useState({hipAngle: null, kneeAngle: null});
 
-  const calculateAngleWithHorizontal = (hip, shoulder) => {
+  const calculateHipJointAngle = (hip, shoulder) => {
     // Extract coordinates
     const dx = shoulder.x - hip.x;
     const dy = shoulder.y - hip.y;
 
     // Calculate angle using dot product and magnitude
     const angleRad = Math.acos(dx / Math.sqrt(dx ** 2 + dy ** 2));
+    const angleDeg = (angleRad * 180) / Math.PI;
+
+    return angleDeg;
+  };
+
+  const calculateKneeJointAngle = (knee, ankle, isLeftSide) => {
+    const {x: x_k, y: y_k} = knee;
+    const {x: x_a, y: y_a} = ankle;
+
+    const dx = x_a - x_k;
+    const dy = y_a - y_k;
+
+    // Adjust calculation based on whether the left or right side is facing the camera
+    const shinMagnitude = Math.sqrt(dx ** 2 + dy ** 2);
+
+    // Check if it's the left side and adjust the dot product direction accordingly
+    const dotProduct = isLeftSide ? dx * -1 + dy * 0 : dx * 1 + dy * 0;
+
+    const angleRad = Math.acos(dotProduct / shinMagnitude);
     const angleDeg = (angleRad * 180) / Math.PI;
 
     return angleDeg;
@@ -86,7 +105,10 @@ const App = () => {
         for (const connection of poseLandmarkConnections) {
           const [a, b] = connection;
 
-          if ((a === 11 || a === 23) && (b === 23 || b === 25)) {
+          if (
+            (a === 11 || a === 23 || a === 25) &&
+            (b === 23 || b === 25 || b === 27)
+          ) {
             if (pts[11].z < pts[12].z) {
               const pt1 = vc.convertPoint(frameDims, pts[a]);
               const pt2 = vc.convertPoint(frameDims, pts[b]);
@@ -94,12 +116,23 @@ const App = () => {
               newLines.push(vec(pt2.x, pt2.y));
 
               if (a === 11 && b === 23) {
-                setAngle({
-                  hipAngle: calculateAngleWithHorizontal(pts[11], pts[23]),
-                });
+                setAngle(prev => ({
+                  ...prev,
+                  hipAngle: calculateHipJointAngle(pts[11], pts[23]),
+                }));
+              }
+
+              if (a === 25 && b === 27) {
+                setAngle(prev => ({
+                  ...prev,
+                  kneeAngle: calculateKneeJointAngle(pts[25], pts[27], true),
+                }));
               }
             }
-          } else if ((a === 12 || a === 24) && (b === 24 || b === 26)) {
+          } else if (
+            (a === 12 || a === 24 || a === 26) &&
+            (b === 24 || b === 26 || b === 28)
+          ) {
             if (pts[12].z < pts[11].z) {
               const pt1 = vc.convertPoint(frameDims, pts[a]);
               const pt2 = vc.convertPoint(frameDims, pts[b]);
@@ -107,9 +140,17 @@ const App = () => {
               newLines.push(vec(pt2.x, pt2.y));
 
               if (a === 12 && b === 24) {
-                setAngle({
-                  hipAngle: calculateAngleWithHorizontal(pts[12], pts[24]),
-                });
+                setAngle(prev => ({
+                  ...prev,
+                  hipAngle: calculateHipJointAngle(pts[12], pts[24]),
+                }));
+              }
+
+              if (a === 26 && b === 28) {
+                setAngle(prev => ({
+                  ...prev,
+                  kneeAngle: calculateKneeJointAngle(pts[26], pts[28], false),
+                }));
               }
             }
           }
