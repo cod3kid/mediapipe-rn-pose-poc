@@ -1,4 +1,5 @@
-import {useCameraPermission} from 'react-native-vision-camera';
+import React from 'react';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {
   MediapipeCamera,
   RunningMode,
@@ -6,18 +7,25 @@ import {
   KnownPoseLandmarkConnections,
   Delegate,
 } from 'react-native-mediapipe';
-import {PoseDrawFrame} from './components/Drawing';
+
+import {useCameraPermission} from 'react-native-vision-camera';
+import {PoseDrawFrame} from './Drawing';
 import {useSharedValue} from 'react-native-reanimated';
 import {vec} from '@shopify/react-native-skia';
-import {useCallback, useState} from 'react';
-import {StyleSheet, View, Pressable, Text} from 'react-native';
 
 const App = () => {
+  const [settings, setSettings] = React.useState({
+    maxResults: 5,
+    threshold: 20,
+    processor: Delegate.GPU,
+    model: 'pose_landmarker_lite',
+  });
+
   const camPerm = useCameraPermission();
-  const [permsGranted, setPermsGranted] = useState({
+  const [permsGranted, setPermsGranted] = React.useState({
     cam: camPerm.hasPermission,
   });
-  const askForPermissions = useCallback(() => {
+  const askForPermissions = React.useCallback(() => {
     if (camPerm.hasPermission) {
       setPermsGranted(prev => ({...prev, cam: true}));
     } else {
@@ -26,22 +34,17 @@ const App = () => {
       });
     }
   }, [camPerm]);
-  const [active, setActive] = useState('back');
+
+  const [active, setActive] = React.useState('back');
+
   const setActiveCamera = () => {
     setActive(currentCamera => (currentCamera === 'front' ? 'back' : 'front'));
   };
+
   const connections = useSharedValue([]);
-  const [settings, setSettings] = useState({
-    maxResults: 5,
-    threshold: 20,
-    processor: Delegate.GPU,
-    model: 'pose_landmarker_lite',
-  });
 
-  const onResults = useCallback(
+  const onResults = React.useCallback(
     (results, vc) => {
-      console.log('Meow Meow');
-
       // console.log(
       //   JSON.stringify({
       //     inftime: results.inferenceTime,
@@ -64,7 +67,7 @@ const App = () => {
       const pts = results.results[0].landmarks[0] ?? [];
       const newLines = [];
       if (pts.length === 0) {
-        console.log('No landmarks detected');
+        // console.log("No landmarks detected");
       } else {
         for (const connection of KnownPoseLandmarkConnections) {
           const [a, b] = connection;
@@ -78,11 +81,9 @@ const App = () => {
     },
     [connections],
   );
-
-  const onError = useCallback(error => {
-    // console.log(`error: ${error}`);
+  const onError = React.useCallback(error => {
+    console.log(`error: ${error}`);
   }, []);
-
   const poseDetection = usePoseDetection(
     {
       onResults: onResults,
@@ -91,17 +92,19 @@ const App = () => {
     RunningMode.LIVE_STREAM,
     `${settings.model}.task`,
     {
-      fpsMode: 30,
+      fpsMode: 'none',
       // forceOutputOrientation: "portrait-upside-down",
       // forceCameraOrientation: "landscape-left",
     }, // supply a number instead to get a specific framerate
   );
 
+  console.log(connections);
+
   if (permsGranted.cam) {
     return (
       <View style={styles.container}>
         <MediapipeCamera
-          style={StyleSheet.absoluteFill}
+          style={styles.box}
           solution={poseDetection}
           activeCamera={active}
           resizeMode="cover"
@@ -112,9 +115,9 @@ const App = () => {
         </Pressable>
       </View>
     );
+  } else {
+    return <NeedPermissions askForPermissions={askForPermissions} />;
   }
-
-  return <NeedPermissions askForPermissions={askForPermissions} />;
 };
 
 const NeedPermissions = ({askForPermissions}) => {
@@ -149,7 +152,6 @@ const styles = StyleSheet.create({
     left: 0,
     width: '100%',
     height: '100%',
-    flex: 1,
   },
   permsButton: {
     padding: 15.5,
