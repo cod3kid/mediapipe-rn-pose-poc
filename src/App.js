@@ -4,9 +4,10 @@ import {
   MediapipeCamera,
   RunningMode,
   usePoseDetection,
-  KnownPoseLandmarkConnections,
   Delegate,
+  KnownPoseLandmarkConnections,
 } from 'react-native-mediapipe';
+import {poseLandmarkConnections} from './utils/constants';
 
 import {useCameraPermission} from 'react-native-vision-camera';
 import {PoseDrawFrame} from './Drawing';
@@ -43,6 +44,18 @@ const App = () => {
 
   const connections = useSharedValue([]);
 
+  const calculateAngleWithHorizontal = (hip, shoulder) => {
+    // Extract coordinates
+    const dx = shoulder.x - hip.x;
+    const dy = shoulder.y - hip.y;
+
+    // Calculate angle using dot product and magnitude
+    const angleRad = Math.acos(dx / Math.sqrt(dx ** 2 + dy ** 2));
+    const angleDeg = (angleRad * 180) / Math.PI;
+
+    return angleDeg;
+  };
+
   const onResults = React.useCallback(
     (results, vc) => {
       // console.log(
@@ -69,12 +82,24 @@ const App = () => {
       if (pts.length === 0) {
         // console.log("No landmarks detected");
       } else {
-        for (const connection of KnownPoseLandmarkConnections) {
+        for (const connection of poseLandmarkConnections) {
           const [a, b] = connection;
-          const pt1 = vc.convertPoint(frameDims, pts[a]);
-          const pt2 = vc.convertPoint(frameDims, pts[b]);
-          newLines.push(vec(pt1.x, pt1.y));
-          newLines.push(vec(pt2.x, pt2.y));
+
+          if ((a === 11 || a === 23) && (b === 23 || b === 25)) {
+            if (pts[11].z < pts[12].z) {
+              const pt1 = vc.convertPoint(frameDims, pts[a]);
+              const pt2 = vc.convertPoint(frameDims, pts[b]);
+              newLines.push(vec(pt1.x, pt1.y));
+              newLines.push(vec(pt2.x, pt2.y));
+            }
+          } else if ((a === 12 || a === 24) && (b === 24 || b === 26)) {
+            if (pts[12].z < pts[11].z) {
+              const pt1 = vc.convertPoint(frameDims, pts[a]);
+              const pt2 = vc.convertPoint(frameDims, pts[b]);
+              newLines.push(vec(pt1.x, pt1.y));
+              newLines.push(vec(pt2.x, pt2.y));
+            }
+          }
         }
       }
       connections.value = newLines;
@@ -97,8 +122,6 @@ const App = () => {
       // forceCameraOrientation: "landscape-left",
     }, // supply a number instead to get a specific framerate
   );
-
-  console.log(connections);
 
   if (permsGranted.cam) {
     return (

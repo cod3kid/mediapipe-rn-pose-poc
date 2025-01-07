@@ -1,20 +1,20 @@
 import React from 'react';
 import {Points, Canvas} from '@shopify/react-native-skia';
 
-export const PoseDrawFrame = props => {
+export const PoseDrawFrame = ({connections, style}) => {
   return (
-    <Canvas style={props.style}>
+    <Canvas style={style}>
       <Points
-        points={props.connections}
+        points={connections}
         mode="lines"
-        color={'lightblue'}
+        color={'lightgreen'}
         style={'stroke'}
         strokeWidth={3}
       />
       <Points
-        points={props.connections}
+        points={connections}
         mode="points"
-        color={'red'}
+        color={'blue'}
         style={'stroke'}
         strokeWidth={10}
         strokeCap={'round'}
