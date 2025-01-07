@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import {
   MediapipeCamera,
@@ -43,6 +43,7 @@ const App = () => {
   };
 
   const connections = useSharedValue([]);
+  const [angle, setAngle] = useState({hipAngle: null, kneeAngle: null});
 
   const calculateAngleWithHorizontal = (hip, shoulder) => {
     // Extract coordinates
@@ -91,6 +92,12 @@ const App = () => {
               const pt2 = vc.convertPoint(frameDims, pts[b]);
               newLines.push(vec(pt1.x, pt1.y));
               newLines.push(vec(pt2.x, pt2.y));
+
+              if (a === 11 && b === 23) {
+                setAngle({
+                  hipAngle: calculateAngleWithHorizontal(pts[11], pts[23]),
+                });
+              }
             }
           } else if ((a === 12 || a === 24) && (b === 24 || b === 26)) {
             if (pts[12].z < pts[11].z) {
@@ -98,6 +105,12 @@ const App = () => {
               const pt2 = vc.convertPoint(frameDims, pts[b]);
               newLines.push(vec(pt1.x, pt1.y));
               newLines.push(vec(pt2.x, pt2.y));
+
+              if (a === 12 && b === 24) {
+                setAngle({
+                  hipAngle: calculateAngleWithHorizontal(pts[12], pts[24]),
+                });
+              }
             }
           }
         }
@@ -132,7 +145,11 @@ const App = () => {
           activeCamera={active}
           resizeMode="cover"
         />
-        <PoseDrawFrame connections={connections} style={styles.box} />
+        <PoseDrawFrame
+          connections={connections}
+          style={styles.box}
+          angle={angle}
+        />
         <Pressable style={styles.cameraSwitchButton} onPress={setActiveCamera}>
           <Text style={styles.cameraSwitchButtonText}>Switch Camera</Text>
         </Pressable>
